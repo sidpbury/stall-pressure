@@ -133,9 +133,19 @@ def stress_test_and_collect_psi():
     psi_before = read_psi_info()
 
     # Run stress tests in parallel
-    cpu_stress(duration)
-    memory_stress(duration)
-    io_stress(duration)
+    tests = []                                                                                                                       
+                                                                                                                                     
+    cpu = multiprocessing.Process(target=cpu_stress, args=(duration,))                                                               
+    mem = multiprocessing.Process(target=memory_stress, args=(duration,))                                                            
+    io = multiprocessing.Process(target=io_stress, args=(duration,))                                                                 
+                                                                                                                                     
+    tests.append(cpu)                                                                                                                
+    tests.append(mem)                                                                                                                
+    tests.append(io)                                                                                                                 
+                                                                                                                                     
+    for test in tests:                                                                                                               
+        test.start()                                                                                                                 
+        test.join()  
 
     # Collect PSI data after stress
     print("Collecting PSI data after stress test...")
