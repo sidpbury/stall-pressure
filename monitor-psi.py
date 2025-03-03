@@ -1,5 +1,6 @@
 import read_psi_info as psi_info
 import multiprocessing
+import psutil
 import time
 import csv
 import os
@@ -15,7 +16,7 @@ def log_csv(path, data, timestamp, resource):
                 csvwriter = csv.writer(file)
                 csvwriter.writerows(data[resource])
 
-def monitor_psi(path, interval, use_csv):
+def monitor_psi(path, interval, use_csv, log_proc):
     while True:
         data = psi_info.read_psi_info()
         timestamp = time.ctime()
@@ -27,9 +28,22 @@ def monitor_psi(path, interval, use_csv):
             log_data(path, data, timestamp, "cpu")
             log_data(path, data, timestamp, "memory")
             log_data(path, data, timestamp, "io")
+        if log_proc:
+            procs = []
+            for proc in psutil.process_iter(['cpu_num','cpu_percent','num_threads','memory_percent','name']):
+                procs.append(list(proc.info.values()))
+            if use_csv:
+                if not os.path.exists(path + "/procs"):
+                    os.mkdir(path + "/procs")
+                with open(path + "/procs/" + timestamp + ".csv", 'a') as file:
+                    csvwriter = csv.writer(file)
+                    csvwriter.writerow(["cpu_num","cpu_percent","num_threads","memory_percent","name"])
+                    csvwriter.writerows(procs)
+            else:
+                pass
         time.sleep(interval)
 
-def start_monitoring(path='./psi_data', interval=10, use_csv=False):
+def start_monitoring(path='./psi_data', interval=10, use_csv=False, log_proc=False):
     if not os.path.exists(path):
         os.mkdir(path)
     if use_csv:
@@ -47,7 +61,7 @@ def start_monitoring(path='./psi_data', interval=10, use_csv=False):
         with open(path + "/io", 'a') as file:
             file.write("name\tavg10\tavg60\tavg300\ttotal\n")
 
-    monitor = multiprocessing.Process(target=monitor_psi, args=(path, interval, use_csv,))
+    monitor = multiprocessing.Process(target=monitor_psi, args=(path, interval, use_csv, log_proc,))
     monitor.start()
     return monitor
 
