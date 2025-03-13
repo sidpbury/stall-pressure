@@ -31,13 +31,20 @@ def monitor_psi(path, interval, use_csv, log_proc):
         if log_proc:
             procs = []
             for proc in psutil.process_iter(['cpu_num','cpu_percent','num_threads','memory_percent','name']):
-                procs.append(list(proc.info.values()))
+                values = proc.info
+                new_procs = []
+                new_procs.append(values["name"])
+                new_procs.append(values["num_threads"])
+                new_procs.append(values["memory_percent"])
+                new_procs.append(values["cpu_percent"])
+                new_procs.append(values["cpu_num"])
+                procs.append(new_procs)
             if use_csv:
                 if not os.path.exists(path + "/procs"):
                     os.mkdir(path + "/procs")
                 with open(path + "/procs/" + timestamp + ".csv", 'a') as file:
                     csvwriter = csv.writer(file)
-                    csvwriter.writerow(["cpu_num","cpu_percent","num_threads","memory_percent","name"])
+                    csvwriter.writerow(["name","num_threads","memory_percent","cpu_percent","cpu_num"])
                     csvwriter.writerows(procs)
             else:
                 with open(path + "/procs", 'a') as file:
@@ -65,7 +72,7 @@ def start_monitoring(path='./psi_data', interval=10, use_csv=False, log_proc=Fal
             file.write("name\tavg10\tavg60\tavg300\ttotal\n")
         if log_proc:
             with open(path + "/procs", 'a') as file:
-                file.write("cpu_num\tcpu_percent\tnum_threads\tmemory_percent\tname\n")
+                file.write("name\tnum_threads\tmemory_percent\tcpu_percent\tcpu_num\n")
 
     monitor = multiprocessing.Process(target=monitor_psi, args=(path, interval, use_csv, log_proc,))
     monitor.start()
