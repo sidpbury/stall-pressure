@@ -7,9 +7,9 @@ import os
 
 def log_data(path, data, timestamp, resource):
     with open(path + "/" + resource, 'a') as file:
-                file.write(timestamp + ":\n")
+                file.write("\n" + timestamp + ":\n")
                 file.write('\t'.join(map(lambda x: f"{x:.2f}" if type(x) == float else x, data[resource][1])) + '\n')
-                file.write('\t'.join(map(lambda x: f"{x:.2f}" if type(x) == float else x, data[resource][2])) + '\n\n')
+                file.write('\t'.join(map(lambda x: f"{x:.2f}" if type(x) == float else x, data[resource][2])) + '\n')
 
 def log_csv(path, data, timestamp, resource):
     with open(path + "/" + resource + "/" + timestamp + ".csv", 'a') as file:
@@ -40,7 +40,10 @@ def monitor_psi(path, interval, use_csv, log_proc):
                     csvwriter.writerow(["cpu_num","cpu_percent","num_threads","memory_percent","name"])
                     csvwriter.writerows(procs)
             else:
-                pass
+                with open(path + "/procs", 'a') as file:
+                    file.write("\n" + timestamp + ":\n")
+                    for proc in procs:
+                        file.write('\t'.join(map(str, proc)) + '\n')
         time.sleep(interval)
 
 def start_monitoring(path='./psi_data', interval=10, use_csv=False, log_proc=False):
@@ -60,6 +63,9 @@ def start_monitoring(path='./psi_data', interval=10, use_csv=False, log_proc=Fal
             file.write("name\tavg10\tavg60\tavg300\ttotal\n")
         with open(path + "/io", 'a') as file:
             file.write("name\tavg10\tavg60\tavg300\ttotal\n")
+        if log_proc:
+            with open(path + "/procs", 'a') as file:
+                file.write("cpu_num\tcpu_percent\tnum_threads\tmemory_percent\tname\n")
 
     monitor = multiprocessing.Process(target=monitor_psi, args=(path, interval, use_csv, log_proc,))
     monitor.start()
